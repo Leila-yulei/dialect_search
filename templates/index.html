@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>方言检索工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .search-bar {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .search-input {
+            width: 300px;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ced4da;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        .search-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .results-section {
+            margin-top: 20px;
+        }
+
+        .results-header {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            background-color: #ffffff;
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .results-header h2 {
+            margin: 0;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .entry-label {
+            margin-left: 20px;
+        }
+
+        .results-word {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .results-meaning {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .results-table {
+            width: 100%;
+            margin-top: 10px;
+            border-collapse: collapse;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .results-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>方言检索工具</h1>
+
+        <div class="search-bar">
+            <input type="text" class="search-input" id="searchInput" placeholder="输入被释意思或被释词">
+            <button class="search-button" onclick="searchByMeaning()">按被释意义搜索</button>
+            <button class="search-button" onclick="searchByWord()">按被释词搜索</button>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <!-- 搜索结果将动态插入到这里 -->
+        </div>
+    </div>
+
+    <script>
+        async function searchByMeaning() {
+            const searchTerm = document.getElementById('searchInput').value;
+            const response = await fetch(`/search_by_meaning?meaning=${searchTerm}`);
+            const results = await response.json();
+            displayResults(results);
+        }
+
+        async function searchByWord() {
+            const searchTerm = document.getElementById('searchInput').value;
+            const response = await fetch(`/search_by_word?word=${searchTerm}`);
+            const results = await response.json();
+            displayResults(results);
+        }
+
+        function displayResults(results) {
+            const resultsSection = document.getElementById('resultsSection');
+            resultsSection.innerHTML = ''; // 清空之前的搜索结果
+
+            results.forEach(result => {
+                // 创建结果头部
+            const resultHeader = document.createElement('div');
+            resultHeader.className = 'results-header';
+            resultHeader.innerHTML = `
+                <h2>
+                    卷数: ${result.volume || '未知'}
+                    <span class="entry-label">条目: ${result.entry || '未知'}</span>
+                </h2>
+                <h2>被释词: ${result.word || result.words.join(', ')}</h2>
+                <p class="results-meaning">被释意义: ${result.meaning || result.meanings.join(', ')}</p>
+            `;
+
+                // 创建方言表格
+                const dialectTable = document.createElement('table');
+                dialectTable.className = 'results-table';
+                dialectTable.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>方言用词</th>
+                            <th>地区</th>
+                            <th>上古聲母</th>
+                            <th>上古韻部</th>
+                            <th>备注</th>
+                            <th>原文</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${result.dialects.map(dialect => `
+                            <tr>
+                                <td>${dialect.dialect_word}</td>
+                                <td>${dialect.region || '无'}</td>
+                                <td>${dialect.initial || '无'}</td>
+                                <td>${dialect.rhyme || '无'}</td>
+                                <td>${dialect.comment || '无'}</td>
+                                <td>${dialect.original_text || '无'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                `;
+
+                // 将结果头部和表格添加到结果区域
+                resultsSection.appendChild(resultHeader);
+                resultsSection.appendChild(dialectTable);
+            });
+        }
+    </script>
+</body>
+</html>
